@@ -1,0 +1,10 @@
+data_path: data/sample_docs
+indexing:
+  use_faiss: false
+retrieval:
+  lexical_weight: 0.6
+  dense_weight: 0.4
+chat:
+  top_k: 5
+evaluation:
+  k_values: [1, 3, 5]
