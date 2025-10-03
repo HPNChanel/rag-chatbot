@@ -1,0 +1,2 @@
+The organization corpus contains shared knowledge about the lab mission.
+We collaborate on retrieval augmented generation systems and deploy them securely.

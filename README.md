@@ -92,15 +92,13 @@ streamlit run ui/streamlit_app.py
 
 The UI provides a chat-style interface, a retrieval panel with highlighted matches, and a metrics sidebar summarising latency, reranker impact, and citation details. The app communicates with the FastAPI server, so ensure it is running locally or point the sidebar configuration to a deployed instance.
 
-### One-command Demo
+### Deployment & Scaling
 
-Use the bundled runner to start both services together:
+- **Local developer sandbox:** `make run-local` loads the sample dataset, starts the FastAPI API on `http://localhost:8000`, and launches the Streamlit UI on `http://localhost:8501`.
+- **Small organisation mode:** `make run-org` reuses a shared NAS index, enables API keys + rate limiting, and exposes `/metrics` for lightweight monitoring.
+- Detailed instructions, diagrams, and troubleshooting tips live in [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md).
 
-```bash
-make run
-```
-
-Both interfaces default to lightweight embeddings and the pure-Python vector store so they run without optional dependencies. Set `use_faiss=True` when constructing `RAGPipeline` to leverage FAISS if it is installed.
+Both deployment paths default to the lightweight Python indexer so they run without optional dependencies. Set `--index-type faiss` (or update the config) when FAISS is installed to accelerate similarity search.
 
 ## Configuration
 

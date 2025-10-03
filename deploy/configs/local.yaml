@@ -1,0 +1,7 @@
+mode: local
+dataset: data/sample_docs
+index_type: faiss
+api_port: 8000
+ui_port: 8501
+reranker: coverage
+index_path: ~/.ragx/index

@@ -1,0 +1,16 @@
+mode: org
+dataset: data/organization_corpus
+index_path: /shared/ragx/index/
+workers: 4
+api_port: 9000
+ui_port: 8501
+index_type: faiss
+reranker: coverage
+enable_redaction: true
+logging:
+  directory: /shared/ragx/logs/
+rate_limit:
+  requests_per_minute: 120
+  burst: 180
+api_keys:
+  - team-secret-key
