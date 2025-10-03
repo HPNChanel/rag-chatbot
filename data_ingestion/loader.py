@@ -175,6 +175,11 @@ def chunk_text(text: str, chunk_size: int, chunk_overlap: int) -> Iterator[str]:
     words = text.split()
     if not words:
         return iter(())
+    if chunk_size >= len(words):
+        def _single() -> Iterator[str]:
+            yield " ".join(words)
+
+        return _single()
     overlap = min(chunk_overlap, chunk_size - 1) if chunk_size > 1 else 0
     step = max(1, chunk_size - overlap)
     start = 0

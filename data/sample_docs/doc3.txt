@@ -1,0 +1,1 @@
+Streamlit enables rapid development of data apps with a Python-first workflow. It supports chat interfaces and visualization components.

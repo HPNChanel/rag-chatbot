@@ -1,0 +1,9 @@
+# Example configuration for running the demo locally
+server:
+  host: 0.0.0.0
+  port: 8000
+  data_path: data/sample_docs
+  top_k: 4
+ui:
+  server_url: http://localhost:8000
+  top_k: 4
