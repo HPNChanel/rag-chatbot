@@ -1,12 +1,32 @@
 from pathlib import Path
 
 from data_ingestion.loader import Document, DocumentLoader
+from evaluation import (
+    build_human_eval_payload,
+    corpus_bleu_score,
+    evaluate_retrieval,
+    meteor_score,
+    rouge_l_score,
+)
+from generation.citation_pipeline import CitationFirstPipeline
 from generation.dummy import EchoGenerator
 from indexing.embedder import get_default_embedder, HashingEmbedder
 from indexing.index import HybridIndex, VectorIndex
 from pipelines.chatbot import RAGPipeline
 from retrieval import BM25Retriever, DualStagePRFRetriever
 from reranking.coverage import CoverageAwareReranker
+
+
+class DeterministicGenerator:
+    """Mock generator producing grounded answers for integration tests."""
+
+    def generate(
+        self,
+        prompt: str,
+        context: list[str] | None = None,
+        max_tokens: int | None = None,
+    ) -> str:
+        return "Python emphasises readability. [doc_python]"
 
 
 def test_end_to_end_query(tmp_path: Path) -> None:
@@ -65,3 +85,41 @@ def test_retrieval_reranking_pipeline() -> None:
     assert reranked[0][1] >= reranked[1][1]
     # Ensure reranker promotes documents from different parents when available
     assert reranked[0][0].metadata["document_id"] != reranked[1][0].metadata["document_id"]
+
+
+def test_query_to_generation_to_evaluation() -> None:
+    documents = [
+        Document(doc_id="doc_python", content="Python prioritises readability and batteries-included tooling", metadata={}),
+        Document(doc_id="doc_rust", content="Rust ensures memory safety", metadata={}),
+    ]
+
+    retriever = BM25Retriever(documents)
+    query = "Why do developers like Python?"
+    query_id = "q_python"
+    retrieved = retriever.search(query, k=2)
+    retrieved_docs = [doc for doc, _ in retrieved]
+    retrieved_ids = [doc.doc_id for doc in retrieved_docs]
+
+    pipeline = CitationFirstPipeline(DeterministicGenerator())
+    generation = pipeline.generate(query, retrieved_docs)
+
+    assert generation.citations == ["doc_python"]
+
+    relevance = {query_id: {"doc_python"}}
+    retrieval_metrics = evaluate_retrieval(relevance, {query_id: retrieved_ids}, (1, 2))
+    assert retrieval_metrics["precision"][1] == 1.0
+
+    references = ["Developers appreciate Python for its readability and batteries included philosophy."]
+    answers = [generation.answer]
+
+    bleu = corpus_bleu_score(references, answers)
+    rouge_l = rouge_l_score(references, answers)
+    meteor = meteor_score(references, answers)
+
+    assert bleu > 0
+    assert rouge_l > 0
+    assert meteor > 0
+
+    human_template = build_human_eval_payload(query, references[0], generation.answer, generation.citations)
+    serialised = human_template.to_json()
+    assert "doc_python" in serialised
