@@ -1,0 +1,5 @@
+{"id": "q1", "question": "Which planet is called the red planet?", "gold_passages": ["doc1"], "gold_answers": ["Mars is known as the red planet."]}
+{"id": "q2", "question": "Which planet has the Great Red Spot?", "gold_passages": ["doc2"], "gold_answers": ["Jupiter has the Great Red Spot."]}
+{"id": "q3", "question": "Which planet is known for its rings?", "gold_passages": ["doc3"], "gold_answers": ["Saturn is known for its rings."]}
+{"id": "q4", "question": "What planet has the hottest surface temperature?", "gold_passages": ["doc4"], "gold_answers": ["Venus has the hottest surface temperature."]}
+{"id": "q5", "question": "What is the closest planet to the sun?", "gold_passages": ["doc5"], "gold_answers": ["Mercury is the closest planet to the sun."]}

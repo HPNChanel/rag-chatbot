@@ -1,0 +1,13 @@
+base_config: experiments/configs/baseline.yaml
+experiments:
+  - name: no_prf
+    overrides:
+      - retrieval.prf.enabled=false
+  - name: prf_depth_3
+    overrides:
+      - retrieval.prf.enabled=true
+      - retrieval.prf.feedback_k=3
+  - name: prf_depth_5
+    overrides:
+      - retrieval.prf.enabled=true
+      - retrieval.prf.feedback_k=5
