@@ -4,6 +4,10 @@ num_queries: 5
 random_query_sample: false
 max_docs_per_query: 3
 seed: 1234
+safety:
+  enable_redaction: false
+  pii: true
+  sensitive_terms: []
 retrieval:
   type: bm25
   top_k: 5

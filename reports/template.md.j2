@@ -29,11 +29,31 @@ This report summarises automated retrieval-augmented generation experiments.
 No additional significance testing was requested. Use the raw metrics for custom analysis.
 
 ## Error Analysis
-{% for case in failure_cases %}
-- **Query:** {{ case.question }}
-  - **Answer:** {{ case.answer }}
-  - **Context IDs:** {{ case.context|join(", ") }}
+{% if error_summary %}
+- **Total failures:** {{ error_summary.total_failures }} of {{ error_summary.total_queries }} queries ({{ '%.1f' % ((error_summary.total_failures / error_summary.total_queries * 100) if error_summary.total_queries else 0) }}%)
+
+| Category | Count | Percentage |
+| --- | --- | --- |
+{% for name, stats in error_summary.counts.items() %}
+| {{ name }} | {{ stats['count'] }} | {{ '%.1f%%' % stats['percentage'] }} |
 {% endfor %}
+
+{% if error_summary.chart_path %}
+![Failure Category Distribution]({{ error_summary.chart_path }})
+{% endif %}
+
+### Sample Failure Cases
+{% for case in error_summary.samples %}
+- **Query:** {{ case.question }}
+  - **Categories:** {{ case.categories|join(", ") }}
+  - **Answer:** {{ case.answer }}
+  - **Retrieved Evidence:** {{ case.context|join(" | ") }}
+{% endfor %}
+
+Full log: [failures.md]({{ error_summary.failures_link }})
+{% else %}
+All evaluated answers aligned with gold references for the analysed run.
+{% endif %}
 
 ## Reproducibility Checklist
 - Python: {{ environment.get('python_version', 'unknown') }}

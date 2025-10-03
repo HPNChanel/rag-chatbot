@@ -6,6 +6,8 @@ from typing import List
 
 import typer
 
+from analysis import run_failure_analysis
+
 from . import ablations, runner
 from reports.generate_report import generate_report
 
@@ -56,6 +58,15 @@ def report(
     typer.echo(str(output))
 
 
+@app.command()
+def analyze(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
+    redact: bool = typer.Option(False, "--redact", help="Enable safety redaction"),
+) -> None:
+    run_failure_analysis(run_dir, enable_redaction=redact if redact else None)
+    typer.echo(str(run_dir / "failures.jsonl"))
+
+
 def run_command() -> None:
     typer.run(run)
 
@@ -68,4 +79,8 @@ def report_command() -> None:
     typer.run(report)
 
 
-__all__ = ["run_command", "ablations_command", "report_command"]
+def analyze_command() -> None:
+    typer.run(analyze)
+
+
+__all__ = ["run_command", "ablations_command", "report_command", "analyze_command"]
