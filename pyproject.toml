@@ -23,9 +23,23 @@ nltk = "^3.8.1"
 rouge-score = "^0.1.2"
 pydantic = "^2.7.1"
 requests = "^2.32.3"
+PyYAML = "^6.0.1"
+typer = "^0.12.3"
+Jinja2 = "^3.1.4"
+matplotlib = "^3.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"
+black = "^24.4.2"
+isort = "^5.13.2"
+ruff = "^0.4.5"
+mypy = "^1.10.0"
+flake8 = "^7.1.0"
+
+[tool.poetry.scripts]
+ragx-run = "experiments.cli:run_command"
+ragx-ablations = "experiments.cli:ablations_command"
+ragx-report = "experiments.cli:report_command"
 
 [build-system]
 requires = ["poetry-core>=1.8.0"]

@@ -1,0 +1,52 @@
+# {{ title }}
+
+**Authors:** {{ authors|join(", ") if authors else "Unknown" }}
+
+## Abstract
+This report summarises automated retrieval-augmented generation experiments.
+
+## Methods
+- **Dataset:** {{ dataset_path }} (split: {{ eval_split }})
+- **Seeds:** {{ seeds|join(", ") }}
+- **Hardware:** {{ environment.get('cpu', 'unknown') }}
+
+## Experimental Setup
+```
+{{ config_yaml }}
+```
+
+## Results
+{% for table in tables %}
+{{ table }}
+{% endfor %}
+
+{% for plot in plots %}
+![{{ plot.name }}]({{ plot.path }})
+
+{% endfor %}
+
+## Ablations & Significance
+No additional significance testing was requested. Use the raw metrics for custom analysis.
+
+## Error Analysis
+{% for case in failure_cases %}
+- **Query:** {{ case.question }}
+  - **Answer:** {{ case.answer }}
+  - **Context IDs:** {{ case.context|join(", ") }}
+{% endfor %}
+
+## Reproducibility Checklist
+- Python: {{ environment.get('python_version', 'unknown') }}
+- Platform: {{ environment.get('platform', 'unknown') }}
+- Config hash: {{ config_hash }}
+
+## Limitations & Future Work
+This report is generated automatically. Verify scores manually before publishing.
+
+{% if include_appendix %}
+## Appendix
+Raw metrics:
+```
+{{ metrics_json }}
+```
+{% endif %}

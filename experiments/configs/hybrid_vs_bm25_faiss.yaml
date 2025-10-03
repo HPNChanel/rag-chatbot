@@ -1,0 +1,11 @@
+base_config: experiments/configs/baseline.yaml
+experiments:
+  - name: bm25
+    overrides:
+      - retrieval.type=bm25
+  - name: faiss
+    overrides:
+      - retrieval.type=faiss
+  - name: hybrid
+    overrides:
+      - retrieval.type=hybrid

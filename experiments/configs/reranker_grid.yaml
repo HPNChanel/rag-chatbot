@@ -1,0 +1,15 @@
+base_config: experiments/configs/baseline.yaml
+experiments:
+  - name: rerank_off
+    overrides:
+      - reranking.enabled=false
+  - name: rerank_medium
+    overrides:
+      - reranking.enabled=true
+      - reranking.lambda_similarity=0.7
+      - reranking.lambda_coverage=0.2
+  - name: rerank_high_coverage
+    overrides:
+      - reranking.enabled=true
+      - reranking.lambda_similarity=0.5
+      - reranking.lambda_coverage=0.4

@@ -106,10 +106,57 @@ Both interfaces default to lightweight embeddings and the pure-Python vector sto
 
 Configuration files live in `configs/`. Update `configs/default.yaml` to point to different datasets or tweak retrieval settings. The indexing section accepts a `use_faiss` flag so deployments can opt into FAISS when it is installed.
 
+## Benchmarking & Reporting
+
+The `experiments` package adds a reproducible benchmarking workflow:
+
+- Run a baseline experiment on the bundled tiny dataset:
+
+  ```bash
+  ragx-run --config experiments/configs/baseline.yaml --repeat 3
+  ```
+
+- Launch a PRF ablation:
+
+  ```bash
+  ragx-ablations --suite experiments/configs/prf_grid.yaml --repeat 2
+  ```
+
+- Generate a markdown report for the latest run:
+
+  ```bash
+  make report
+  ```
+
+Example config snippet for a PRF sweep:
+
+```yaml
+retrieval:
+  type: bm25
+  top_k: 10
+  prf:
+    enabled: true
+    feedback_k: 5
+    strategy: sum
+```
+
+Example reranker weight sweep:
+
+```yaml
+reranking:
+  enabled: true
+  lambda_similarity: 0.6
+  lambda_coverage: 0.3
+```
+
+To switch between the mock and OpenAI generators update the `generation.provider` field in your config (`mock` for offline tests, `openai` for production). The mock generator is deterministic and ideal for CI.
+
+All experiments write to `runs/<timestamp>_<hash>/` with resolved configs, raw results, metrics, and plots. See `docs/EXPERIMENT_GUIDE.md` for best practices.
+
 ## Testing
 
 ```bash
-pytest
+make test
 ```
 
 All tests run against the lightweight hashing embedder and the pure Python similarity search path, so they succeed even when FAISS/numpy are unavailable.

@@ -1,0 +1,34 @@
+dataset_path: tiny
+eval_split: test
+num_queries: 5
+random_query_sample: false
+max_docs_per_query: 3
+seed: 1234
+retrieval:
+  type: bm25
+  top_k: 5
+  prf:
+    enabled: false
+    feedback_k: 3
+    strategy: sum
+reranking:
+  enabled: false
+  lambda_coverage: 0.15
+  lambda_similarity: 0.7
+generation:
+  provider: mock
+  model: echo
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 128
+  citation_mode: citation-first
+metrics:
+  retrieval_cutoffs: [1, 3, 5]
+report:
+  title: "Tiny Benchmark Baseline"
+  authors: ["Benchmark Team"]
+  output_formats: ["md"]
+  figures:
+    retrieval: true
+    latency: true
+    scatter: true
