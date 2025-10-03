@@ -22,9 +22,15 @@ class BM25Retriever:
 
     def search(self, query: str, k: int = 5) -> List[Tuple[Document, float]]:
         if self.model is not None:
-            scores = self.model.get_scores(query.lower().split())
-            ranked_indices = scores.argsort()[::-1][:k]
-            return [(self.documents[idx], float(scores[idx])) for idx in ranked_indices]
+            scores_array = self.model.get_scores(query.lower().split())
+            scored = [
+                (idx, float(score)) for idx, score in enumerate(scores_array)
+            ]
+            scored.sort(key=lambda item: (item[1], -item[0]), reverse=True)
+            return [
+                (self.documents[idx], score)
+                for idx, score in scored[:k]
+            ]
         return self._fallback_search(query, k)
 
     def _fallback_search(self, query: str, k: int) -> List[Tuple[Document, float]]:

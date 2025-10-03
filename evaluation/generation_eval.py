@@ -22,7 +22,10 @@ def corpus_bleu_score(references: Sequence[str], hypotheses: Sequence[str]) -> f
     if corpus_bleu is None or SmoothingFunction is None:  # pragma: no cover - fallback
         return _simple_bleu(reference_list, hypothesis_tokens)
     smoothing = SmoothingFunction().method1
-    return corpus_bleu(reference_list, hypothesis_tokens, smoothing_function=smoothing)
+    try:
+        return corpus_bleu(reference_list, hypothesis_tokens, smoothing_function=smoothing)
+    except TypeError:  # pragma: no cover - fallback for Python 3.12 Fraction API change
+        return _simple_bleu(reference_list, hypothesis_tokens)
 
 
 def rouge_l_score(references: Sequence[str], hypotheses: Sequence[str]) -> float:

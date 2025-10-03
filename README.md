@@ -79,13 +79,25 @@ uvicorn ui.server:app --reload
 
 Endpoints:
 
-- `POST /query` – Retrieve top documents for a query.
-- `POST /chat` – Generate an answer grounded in retrieved documents.
+- `POST /query` – Retrieve top documents along with candidate/reranked scores and latency metrics.
+- `POST /chat` – Generate an answer that includes inline references plus a structured citation payload.
+
+Each request is logged via middleware that records payloads and response times for easy observability.
 
 ### Streamlit Demo
 
 ```bash
 streamlit run ui/streamlit_app.py
+```
+
+The UI provides a chat-style interface, a retrieval panel with highlighted matches, and a metrics sidebar summarising latency, reranker impact, and citation details. The app communicates with the FastAPI server, so ensure it is running locally or point the sidebar configuration to a deployed instance.
+
+### One-command Demo
+
+Use the bundled runner to start both services together:
+
+```bash
+make run
 ```
 
 Both interfaces default to lightweight embeddings and the pure-Python vector store so they run without optional dependencies. Set `use_faiss=True` when constructing `RAGPipeline` to leverage FAISS if it is installed.
