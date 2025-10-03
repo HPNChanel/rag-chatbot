@@ -6,10 +6,14 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
+try:  # pragma: no cover - optional dependency for charts
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover - graceful fallback when matplotlib unavailable
+    plt = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -23,6 +27,17 @@ class FailureCase:
     question: str
     answer: str
     context: List[str]
+    categories: List[str]
+
+
+@dataclass
+class ErrorSummary:
+    counts: Dict[str, Dict[str, float]]
+    total_failures: int
+    total_queries: int
+    chart_path: Optional[str]
+    samples: List[FailureCase]
+    failures_link: Optional[str]
 
 
 def _load_yaml(path: Path) -> str:
@@ -51,22 +66,91 @@ def _load_plots(path: Path, *, run_dir: Path) -> List[PlotArtifact]:
     return artifacts
 
 
-def _load_failure_cases(results_path: Path, limit: int = 5) -> List[FailureCase]:
+def _load_failure_cases(failures_path: Path, limit: int = 5) -> List[FailureCase]:
     cases: List[FailureCase] = []
-    if not results_path.exists():
+    if not failures_path.exists():
         return cases
-    for idx, line in enumerate(results_path.read_text(encoding="utf-8").splitlines()):
-        if idx >= limit:
-            break
-        payload = json.loads(line)
-        cases.append(
-            FailureCase(
-                question=payload.get("question", ""),
-                answer=payload.get("generated_answer", ""),
-                context=payload.get("selected_context", []),
+    with failures_path.open("r", encoding="utf-8") as handle:
+        for idx, line in enumerate(handle):
+            if idx >= limit:
+                break
+            if not line.strip():
+                continue
+            payload = json.loads(line)
+            cases.append(
+                FailureCase(
+                    question=payload.get("question", ""),
+                    answer=payload.get("generated_answer", ""),
+                    context=[doc.get("content", "") for doc in payload.get("retrieved_docs", [])],
+                    categories=list(payload.get("error_categories", [])),
+                )
             )
-        )
     return cases
+
+
+def _count_results(results_path: Path) -> int:
+    if not results_path.exists():
+        return 0
+    with results_path.open("r", encoding="utf-8") as handle:
+        return sum(1 for _ in handle)
+
+
+def _load_failure_summary(run_path: Path, total_queries: int) -> Optional[ErrorSummary]:
+    failures_path = run_path / "failures.jsonl"
+    if not failures_path.exists():
+        return None
+    counts: Dict[str, int] = {}
+    payloads: List[dict] = []
+    with failures_path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            payload = json.loads(line)
+            payloads.append(payload)
+            for category in payload.get("error_categories", []):
+                counts[category] = counts.get(category, 0) + 1
+    if not payloads:
+        return None
+    chart_path = _render_failure_chart(counts, run_path)
+    total_failures = len(payloads)
+    summary_counts: Dict[str, Dict[str, float]] = {}
+    for category, count in counts.items():
+        percentage = 0.0
+        if total_queries:
+            percentage = (count / total_queries) * 100.0
+        summary_counts[category] = {"count": count, "percentage": percentage}
+    samples = _load_failure_cases(failures_path, limit=5)
+    return ErrorSummary(
+        counts=summary_counts,
+        total_failures=total_failures,
+        total_queries=total_queries,
+        chart_path=chart_path,
+        samples=samples,
+        failures_link=str((run_path / "failures.md").relative_to(run_path)),
+    )
+
+
+def _render_failure_chart(counts: Dict[str, int], run_path: Path) -> Optional[str]:
+    if not counts or plt is None:
+        return None
+    plots_dir = run_path / "plots"
+    plots_dir.mkdir(exist_ok=True)
+    categories = list(counts.keys())
+    values = [counts[cat] for cat in categories]
+    figure = plt.figure(figsize=(6, 4))
+    ax = figure.add_subplot(1, 1, 1)
+    positions = list(range(len(categories)))
+    ax.bar(positions, values, color="#b23b3b")
+    ax.set_ylabel("Count")
+    ax.set_title("Failure Categories")
+    ax.set_xticks(positions)
+    ax.set_xticklabels(categories, rotation=45, ha="right")
+    chart_path = plots_dir / "failure_categories.png"
+    figure.tight_layout()
+    figure.savefig(chart_path, dpi=150)
+    plt.close(figure)
+    return str(chart_path.relative_to(run_path))
 
 
 def generate_report(
@@ -90,7 +174,9 @@ def generate_report(
     metrics_json = metrics_path.read_text(encoding="utf-8") if metrics_path.exists() else "{}"
     tables = _load_tables(run_path / "tables")
     plots = _load_plots(run_path / "plots", run_dir=run_path)
-    failure_cases = _load_failure_cases(run_path / "results_raw.jsonl")
+    total_queries = _count_results(run_path / "results_raw.jsonl")
+    error_summary = _load_failure_summary(run_path, total_queries)
+    failure_cases = error_summary.samples if error_summary else []
     seeds = [str(config.get("seed", 0) + idx) for idx in range(config.get("repeat", 1))]
     rendered = template.render(
         title=title,
@@ -103,6 +189,7 @@ def generate_report(
         tables=tables,
         plots=plots,
         failure_cases=failure_cases,
+        error_summary=error_summary,
         config_hash=run_path.name.split("_")[-1],
         metrics_json=metrics_json,
         include_appendix=include_appendix,

@@ -153,6 +153,24 @@ To switch between the mock and OpenAI generators update the `generation.provider
 
 All experiments write to `runs/<timestamp>_<hash>/` with resolved configs, raw results, metrics, and plots. See `docs/EXPERIMENT_GUIDE.md` for best practices.
 
+## Error Analysis & Safety
+
+- Run `ragx-analyze --run-dir runs/<run_id> --redact` after benchmarks to categorise failures and generate redacted artefacts.
+- Failure categories cover retrieval misses, citation issues, hallucinations, coverage gaps, and paraphrase mismatches. Each failure includes diagnostic signals in `failures.jsonl`.
+- Redaction is configurable via the `safety` block in `config.used.yaml`:
+
+  ```yaml
+  safety:
+    enable_redaction: true
+    pii: true
+    sensitive_terms:
+      - Project Phoenix
+      - customer_id
+  ```
+
+- Review `failures.md` / `failures.html` for tabular summaries and highlighted hallucinated spans. The experiment report (`report.md`) now includes an **Error Analysis** section with category counts, a bar chart, and sample failures.
+- See `docs/ERROR_ANALYSIS_GUIDE.md` for guidance on extending heuristics and sharing redacted artefacts safely.
+
 ## Testing
 
 ```bash

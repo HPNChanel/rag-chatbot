@@ -28,3 +28,50 @@ jobs:
       - name: Tiny benchmark sanity check
         run: |
           ragx-run --config experiments/configs/baseline.yaml --repeat 1 --override num_queries=3 --override generation.provider=mock
+      - name: Error analysis smoke test
+        run: |
+          RUN_DIR=runs/ci_analysis
+          rm -rf "$RUN_DIR"
+          mkdir -p "$RUN_DIR"
+          python - <<'PY'
+from pathlib import Path
+import json
+import yaml
+run_dir = Path("runs/ci_analysis")
+config = {
+    "dataset_path": str((Path("tests/fixtures/benchmarks/tiny")).resolve()),
+    "eval_split": "test",
+    "seed": 0,
+    "safety": {
+        "enable_redaction": True,
+        "pii": True,
+        "sensitive_terms": ["Neptune"],
+    },
+}
+(run_dir / "config.used.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
+payload = {
+    "query_id": "q1",
+    "question": "Which planet is called the red planet?",
+    "retrieved": [{"doc_id": "doc1", "score": 1.0}],
+    "selected_context": ["doc1"],
+    "generated_answer": "Reach me at ci@example.com. Neptune is the red planet. [doc404]",
+    "citations": ["doc404"],
+}
+(run_dir / "results_raw.jsonl").write_text(json.dumps(payload) + "\n", encoding="utf-8")
+PY
+          ragx-analyze --run-dir "$RUN_DIR" --redact
+          test -f "$RUN_DIR/failures.jsonl"
+          test -f "$RUN_DIR/failures.md"
+          python - <<'PY'
+from pathlib import Path
+import json
+run_dir = Path("runs/ci_analysis")
+failures = [json.loads(line) for line in (run_dir / "failures.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+assert failures, "Expected at least one failure"
+assert any(failure["error_categories"] for failure in failures)
+assert "ci@example.com" not in json.dumps(failures)
+assert "Neptune" not in json.dumps(failures)
+markdown = (run_dir / "failures.md").read_text(encoding="utf-8")
+assert "ci@example.com" not in markdown
+assert "Neptune" not in markdown
+PY
